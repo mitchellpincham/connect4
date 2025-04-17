@@ -6,7 +6,7 @@ import random
 CELL_SIZE:int = 150
 WIDTH:int = CELL_SIZE * 7
 HEIGHT:int = CELL_SIZE * 6
-DEPTH:int = 5
+DEPTH:int = 7
 
 pygame.init()
 screen:pygame.Surface = pygame.display.set_mode([WIDTH, HEIGHT])
@@ -149,7 +149,7 @@ def make_move(old_board:list[int], pos:int, player:int) -> list[int]:
 
 
 
-def minimax(board:list[int], depth:int, maximising):
+def minimax(board:list[int], depth:int, alpha, beta, maximising_ai):
     if depth == 0:
         # get value somehow
         return 0
@@ -161,30 +161,34 @@ def minimax(board:list[int], depth:int, maximising):
     win = check_win(board)
     if win:
         if win == 1:
-            return -10  # player win
+            return -100 - depth  # player win
         else:
-            return 10  # ai win
+            return 100 + depth  # ai win
 
     
-    if maximising:
+    if maximising_ai:
         bestValue = -np.inf
         for move in options:
-
             child = make_move(board, move, 2)
 
-            v = minimax(child, depth - 1, False)
-            bestValue = max(bestValue, v)
+            value = minimax(child, depth - 1, alpha, beta, False)
+            bestValue = max(bestValue, value)
+            if bestValue >= beta:
+                break
+            alpha = max(alpha, bestValue)
 
         return bestValue
 
     else:
         bestValue = np.inf
         for move in options:
-
             child = make_move(board, move, 1)
 
-            v = minimax(child, depth - 1, True)
-            bestValue = min(bestValue, v)
+            value = minimax(child, depth - 1, alpha, beta, True)
+            bestValue = min(bestValue, value)
+            if bestValue <= alpha:
+                break
+            beta = min(beta, value)
         return bestValue
 
 
@@ -198,7 +202,7 @@ def ai_play(board:list[int]) -> list[int]:
 
     # board full, draw
     if len(options) == 0:
-        return 0
+        return board
 
     best_value = -np.inf
     best_moves = [0]
@@ -206,7 +210,7 @@ def ai_play(board:list[int]) -> list[int]:
 
         child = make_move(board, option, 2)
 
-        value = minimax(child, DEPTH, False)
+        value = minimax(child, DEPTH, -np.inf, np.inf, False)
         print(option, value)
         if value > best_value:
             best_value = value
