@@ -3,6 +3,10 @@ import sys
 import numpy as np
 import random
 
+
+global visited_states
+visited_states:set = set()
+
 CELL_SIZE:int = 150
 WIDTH:int = CELL_SIZE * 7
 HEIGHT:int = CELL_SIZE * 6
@@ -115,6 +119,19 @@ def get_colour(player:int) -> pygame.Color:
     return pygame.Color(250, 180, 30)
 
 
+def hash_board(board:list[int], player_turn:int):
+    #return hash((tuple(board), player_turn))
+    return ''.join(map(str, board))
+    '''
+    sum = 0
+    multiplier = 1
+    for i in range(len(board)):
+        sum += board[i] * multiplier
+        multiplier *= 3
+    
+    return sum'''
+
+
 def play(pos:int, player:int) -> bool:
     pos += 35
 
@@ -148,7 +165,6 @@ def make_move(old_board:list[int], pos:int, player:int) -> list[int]:
         pos -= 7
 
 
-
 def minimax(board:list[int], depth:int, alpha, beta, maximising_ai):
     if depth == 0:
         # get value somehow
@@ -161,9 +177,9 @@ def minimax(board:list[int], depth:int, alpha, beta, maximising_ai):
     win = check_win(board)
     if win:
         if win == 1:
-            return -100 - depth  # player win
+            return -depth  # player win
         else:
-            return 100 + depth  # ai win
+            return depth  # ai win
 
     
     if maximising_ai:
@@ -171,7 +187,14 @@ def minimax(board:list[int], depth:int, alpha, beta, maximising_ai):
         for move in options:
             child = make_move(board, move, 2)
 
+            hashed_child = hash_board(child, 2)
+            if hashed_child in visited_states:
+                continue
+
+            visited_states.add(hashed_child)
             value = minimax(child, depth - 1, alpha, beta, False)
+            visited_states.remove(hashed_child)
+
             bestValue = max(bestValue, value)
             if bestValue >= beta:
                 break
@@ -184,7 +207,14 @@ def minimax(board:list[int], depth:int, alpha, beta, maximising_ai):
         for move in options:
             child = make_move(board, move, 1)
 
+            hashed_child = hash_board(child, 1)
+            if hashed_child in visited_states:
+                continue
+
+            visited_states.add(hashed_child)
             value = minimax(child, depth - 1, alpha, beta, True)
+            visited_states.remove(hashed_child)
+
             bestValue = min(bestValue, value)
             if bestValue <= alpha:
                 break
@@ -194,11 +224,11 @@ def minimax(board:list[int], depth:int, alpha, beta, maximising_ai):
 
 def ai_play(board:list[int]) -> list[int]:
     # get all the options
-
     top_row = board[:7]
-
     #options = [1 if val == 0 else 0 for val in top_row]
     options = [i for i in range(len(top_row)) if top_row[i] == 0]
+
+    visited_states.clear()
 
     # board full, draw
     if len(options) == 0:
@@ -219,10 +249,6 @@ def ai_play(board:list[int]) -> list[int]:
             best_moves.append(option)
 
     return make_move(board, random.choice(best_moves), 2)
-
-    
-    
-
 
 
 
