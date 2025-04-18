@@ -170,7 +170,7 @@ def make_move(old_board:list[int], pos:int, player:int) -> list[int]:
         pos -= 7
 
 
-def minimax(board:list[int], depth:int, alpha, beta, maximising_ai):
+def minimax(board:list[int], depth:int, alpha:float, beta:float, maximising_ai:bool):
     if depth == 0:
         # get value somehow
         return 0
@@ -186,45 +186,27 @@ def minimax(board:list[int], depth:int, alpha, beta, maximising_ai):
         else:
             return depth  # ai win
 
+
+    player = 2 if maximising_ai else 1
     
-    if maximising_ai:
-        bestValue = -np.inf
-        for move in options:
-            child = make_move(board, move, 2)
+    for move in options:
+        child = make_move(board, move, player)
 
-            hashed_child = hash_board(child, 2)
-            if hashed_child in visited_states:
-                continue
+        hashed_child = hash_board(child, player)
+        if hashed_child in visited_states:
+            continue
 
-            visited_states.add(hashed_child)
-            value = minimax(child, depth - 1, alpha, beta, False)
-            visited_states.remove(hashed_child)
+        visited_states.add(hashed_child)
+        value = -minimax(child, depth - 1, -beta, -alpha, not maximising_ai)
+        visited_states.remove(hashed_child)
 
-            bestValue = max(bestValue, value)
-            if bestValue >= beta:
-                break
-            alpha = max(alpha, bestValue)
+        alpha = max(alpha, value)
 
-        return bestValue
+        if value >= beta: return value
+    
+        if value > alpha: alpha = value
 
-    else:
-        bestValue = np.inf
-        for move in options:
-            child = make_move(board, move, 1)
-
-            hashed_child = hash_board(child, 1)
-            if hashed_child in visited_states:
-                continue
-
-            visited_states.add(hashed_child)
-            value = minimax(child, depth - 1, alpha, beta, True)
-            visited_states.remove(hashed_child)
-
-            bestValue = min(bestValue, value)
-            if bestValue <= alpha:
-                break
-            beta = min(beta, value)
-        return bestValue
+    return alpha
 
 
 def ai_play(board:list[int]) -> list[int]:
