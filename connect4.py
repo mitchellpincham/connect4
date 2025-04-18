@@ -11,9 +11,11 @@ CELL_SIZE:int = 150
 WIDTH:int = CELL_SIZE * 7
 HEIGHT:int = CELL_SIZE * 6
 DEPTH:int = 7
+SEARCH_ORDER:list[int] = [3, 2, 4, 1, 5, 0, 6]
 
 pygame.init()
 screen:pygame.Surface = pygame.display.set_mode([WIDTH, HEIGHT])
+
 
 
 # 0 = empty, 1 = player 1, 2 = player 2.
@@ -64,14 +66,14 @@ def check_win(board:np.ndarray) -> int:
     # 4, 5 cannot have 4 in an row; 
     # 3, 6 are tricky as they wrap around, so we have to slice those cases.
     diagonal = board[3::8][:4]
-    if np.all(diagonal):
+    if diagonal[0] != 0 and (diagonal[0] == diagonal[1] == diagonal[2] == diagonal[3]):
         return diagonal[0]
     
     diagonal = board[6::8][1:]
-    if np.all(diagonal):
+    if diagonal[0] != 0 and (diagonal[0] == diagonal[1] == diagonal[2] == diagonal[3]):
         return diagonal[0]
     
-    for x in [0, 1, 2, 6, 7]:
+    for x in [0, 1, 2, 7]:
         diagonal = board[x::8]
 
         if diagonal[2] == 0 or diagonal[3] == 0: continue
@@ -80,7 +82,7 @@ def check_win(board:np.ndarray) -> int:
             if diagonal[i] == diagonal[i + 1] == diagonal[i + 2] == diagonal[i + 3]:
                 return diagonal[i]
             
-
+    
     # Now for the other diagonals, we choose index mod 6
     """
         0123450
@@ -88,6 +90,7 @@ def check_win(board:np.ndarray) -> int:
         2345012
         3450123
         4501234
+        5012345
     """
     # 0, 1, 2 need the front sliced off
     for x in [0, 1, 2]:
@@ -108,6 +111,7 @@ def check_win(board:np.ndarray) -> int:
         for i in range(len(diagonal) - 3):
             if diagonal[i] == diagonal[i + 1] == diagonal[i + 2] == diagonal[i + 3]:
                 return diagonal[i]
+
 
 
 def get_colour(player:int) -> pygame.Color:
@@ -148,7 +152,8 @@ def play(pos:int, player:int) -> bool:
 
 def possible_moves(board:list[int]) -> list[int]:
     #options = [1 if val == 0 else 0 for val in top_row]
-    return [i for i in range(len(board[:7])) if board[i] == 0]
+    top_row = board[:7]
+    return [i for i in SEARCH_ORDER if board[i] == 0]
 
 
 def make_move(old_board:list[int], pos:int, player:int) -> list[int]:
@@ -226,7 +231,7 @@ def ai_play(board:list[int]) -> list[int]:
     # get all the options
     top_row = board[:7]
     #options = [1 if val == 0 else 0 for val in top_row]
-    options = [i for i in range(len(top_row)) if top_row[i] == 0]
+    options = [i for i in SEARCH_ORDER if top_row[i] == 0]
 
     visited_states.clear()
 
@@ -235,7 +240,7 @@ def ai_play(board:list[int]) -> list[int]:
         return board
 
     best_value = -np.inf
-    best_moves = [0]
+    best_moves = 0
     for option in options:
 
         child = make_move(board, option, 2)
@@ -244,11 +249,11 @@ def ai_play(board:list[int]) -> list[int]:
         print(option, value)
         if value > best_value:
             best_value = value
-            best_moves = [option]
-        elif value == best_value:
-            best_moves.append(option)
+            best_moves = option
+        #elif value == best_value:
+        #    best_moves.append(option)
 
-    return make_move(board, random.choice(best_moves), 2)
+    return make_move(board, best_moves, 2)#random.choice(best_moves), 2)
 
 
 
@@ -269,6 +274,8 @@ while True:
             if play(cell_x, 1):
                 board = ai_play(board)
 
+            if check_win(board):
+                print(board)
             print(check_win(board))
 
 
