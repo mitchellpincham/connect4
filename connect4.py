@@ -10,7 +10,7 @@ visited_states:set = set()
 CELL_SIZE:int = 150
 WIDTH:int = CELL_SIZE * 7
 HEIGHT:int = CELL_SIZE * 6
-DEPTH:int = 7
+DEPTH:int = 8
 SEARCH_ORDER:list[int] = [3, 2, 4, 1, 5, 0, 6]
 
 pygame.init()
@@ -120,7 +120,7 @@ def get_colour(player:int) -> pygame.Color:
     return pygame.Color(250, 180, 30)
 
 
-def hash_board(board:list[int], player_turn:int):
+def hash_board(board:list[int]):
     #return hash((tuple(board), player_turn))
     return ''.join(map(str, board))
     '''
@@ -187,13 +187,13 @@ def minimax(board:list[int], depth:int, alpha:float, beta:float, maximising_ai:b
     for move in options:
         child = make_move(board, move, player)
 
-        hashed_child = hash_board(child, player)
+        hashed_child = hash_board(child)
+
         if hashed_child in visited_states:
             continue
 
         visited_states.add(hashed_child)
         value = -minimax(child, depth - 1, -beta, -alpha, not maximising_ai)
-        visited_states.remove(hashed_child)
 
         if value >= beta: return value
         max_value = max(max_value, value)
