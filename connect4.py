@@ -16,11 +16,8 @@ SEARCH_ORDER:list[int] = [3, 2, 4, 1, 5, 0, 6]
 pygame.init()
 screen:pygame.Surface = pygame.display.set_mode([WIDTH, HEIGHT])
 
-
-
 # 0 = empty, 1 = player 1, 2 = player 2.
 board:np.ndarray = np.zeros(42)
-
 
 def check_win(board:np.ndarray) -> int:
     """
@@ -159,8 +156,6 @@ def possible_moves(board:list[int]) -> list[int]:
 def make_move(old_board:list[int], pos:int, player:int) -> list[int]:
     pos += 35
 
-    # replace with [y for y in x if y % 2 == 0] logic
-
     new_board = old_board.copy()
 
     while pos >= 0:
@@ -171,6 +166,15 @@ def make_move(old_board:list[int], pos:int, player:int) -> list[int]:
 
 
 def minimax(board:list[int], depth:int, alpha:float, beta:float, maximising_ai:bool):
+    player = 2 if maximising_ai else 1
+    
+    win = check_win(board)
+    if win:
+        if win == player:
+            return depth
+        else:
+            return -depth
+
     if depth == 0:
         # get value somehow
         return 0
@@ -179,16 +183,7 @@ def minimax(board:list[int], depth:int, alpha:float, beta:float, maximising_ai:b
     if len(options) == 0:
         return 0  # draw
     
-    win = check_win(board)
-    if win:
-        if win == 1:
-            return -depth  # player win
-        else:
-            return depth  # ai win
-
-
-    player = 2 if maximising_ai else 1
-    
+    max_value = -np.inf
     for move in options:
         child = make_move(board, move, player)
 
@@ -200,13 +195,11 @@ def minimax(board:list[int], depth:int, alpha:float, beta:float, maximising_ai:b
         value = -minimax(child, depth - 1, -beta, -alpha, not maximising_ai)
         visited_states.remove(hashed_child)
 
+        if value >= beta: return value
+        max_value = max(max_value, value)
         alpha = max(alpha, value)
 
-        if value >= beta: return value
-    
-        if value > alpha: alpha = value
-
-    return alpha
+    return max_value
 
 
 def ai_play(board:list[int]) -> list[int]:
@@ -222,20 +215,18 @@ def ai_play(board:list[int]) -> list[int]:
         return board
 
     best_value = -np.inf
-    best_moves = 0
+    best_move = 0
     for option in options:
 
         child = make_move(board, option, 2)
 
-        value = minimax(child, DEPTH, -np.inf, np.inf, False)
+        value = -minimax(child, DEPTH, -np.inf, np.inf, False)
         print(option, value)
         if value > best_value:
             best_value = value
-            best_moves = option
-        #elif value == best_value:
-        #    best_moves.append(option)
+            best_move = option
 
-    return make_move(board, best_moves, 2)#random.choice(best_moves), 2)
+    return make_move(board, best_move, 2)
 
 
 
