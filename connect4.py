@@ -24,10 +24,10 @@ def check_win(board:np.ndarray) -> int:
     Add two numbers and return the result.
 
     Args:
-        board, a list of integers, each int in range [0, 2]. The list should be length 42
+        board: a list of integers, each int in range [0, 2]. The list should be length 42
 
     Returns:
-        int of who's won, in range [0, 2]
+        int: who's won, in range [0, 2]
     """
 
     # check rows
@@ -112,6 +112,15 @@ def check_win(board:np.ndarray) -> int:
 
 
 def get_colour(player:int) -> pygame.Color:
+    """
+    Get the player's colours for drawing the circles
+
+    Args:
+        player: which player
+
+    Returns:
+        pygame colour object of which colour to draw
+    """
     if player == 0:
         return pygame.Color(255, 255, 255)
     if player == 1:
@@ -120,49 +129,59 @@ def get_colour(player:int) -> pygame.Color:
     return pygame.Color(250, 180, 30)
 
 
-def hash_board(board:list[int]):
-    #return hash((tuple(board), player_turn))
+def hash_board(board:list[int]) -> str:
+    """
+    Creates a more compact hash of the board
+
+    Args:
+        board: The current board
+
+    Returns:
+        Doesn't matter the type as it's just getting added to set, whatevers convenient
+    """
+
     return ''.join(map(str, board))
-    '''
-    sum = 0
-    multiplier = 1
-    for i in range(len(board)):
-        sum += board[i] * multiplier
-        multiplier *= 3
-    
-    return sum'''
-
-
-def play(pos:int, player:int) -> bool:
-    pos += 35
-
-    # replace with [y for y in x if y % 2 == 0] logic
-
-    while pos >= 0:
-        if board[pos] == 0:
-            board[pos] = player
-            return True
-        pos -= 7
-
-    return False
 
 
 def possible_moves(board:list[int]) -> list[int]:
-    #options = [1 if val == 0 else 0 for val in top_row]
-    top_row = board[:7]
+    """
+    Gives us an array of the possible moves of a given board, ie. the top counter is empty
+
+    Args:
+        board: The board to check
+
+    Returns:
+        An array integers from 0 to 6, for each column that can be played.
+    """
     return [i for i in SEARCH_ORDER if board[i] == 0]
 
 
 def make_move(old_board:list[int], pos:int, player:int) -> list[int]:
+    """
+    Create the next state after the given move is made
+
+    Args:
+        old_board: The board to be played
+        pos: Where to play
+        player: Which colour to play
+
+    Returns:
+        The updated board
+    """
+    # start at the bottom of the board
     pos += 35
 
     new_board = old_board.copy()
 
+    # move up the column
     while pos >= 0:
         if new_board[pos] == 0:
             new_board[pos] = player
             return new_board
         pos -= 7
+
+    # if we're at the top
+    return old_board
 
 
 def minimax(board:list[int], depth:int, alpha:float, beta:float, maximising_ai:bool):
@@ -229,7 +248,6 @@ def ai_play(board:list[int]) -> list[int]:
     return make_move(board, best_move, 2)
 
 
-
 while True:
     screen.fill([0, 0, 0])
     for event in pygame.event.get():
@@ -238,21 +256,24 @@ while True:
             sys.exit()
 
         elif event.type == pygame.MOUSEBUTTONUP:
+            if check_win(board):
+                print(check_win(board))
+                print(board)
+                continue
+
+            if len(possible_moves(board)) == 0:
+                continue
+
             mouse_x:int = pygame.mouse.get_pos()[0]
 
             cell_x:int = mouse_x // CELL_SIZE
             cell_x = max(0, cell_x)
             cell_x = min(6, cell_x)
 
-            if play(cell_x, 1):
-                board = ai_play(board)
-
-            if check_win(board):
-                print(board)
-            print(check_win(board))
+            board = make_move(board, cell_x, 1)
+            board = ai_play(board)
 
 
-    
     for i, cell in enumerate(board):
         x:int = (i % 7) * CELL_SIZE + CELL_SIZE / 2
         y:int = i // 7 * CELL_SIZE + CELL_SIZE / 2
