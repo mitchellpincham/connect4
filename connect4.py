@@ -3,7 +3,6 @@ import sys
 import numpy as np
 import random
 
-
 global visited_states
 visited_states:set = set()
 
@@ -184,8 +183,18 @@ def make_move(old_board:list[int], pos:int, player:int) -> list[int]:
     return old_board
 
 
-def minimax(board:list[int], depth:int, alpha:float, beta:float, maximising_ai:bool):
-    player = 2 if maximising_ai else 1
+def minimax(board:list[int], depth:int, alpha:float, beta:float, player:int):
+    """
+    A Negamax implimentation of minimax with Alpha-Beta pruning
+    Args:
+        board: the game board
+        depth: How many more recursions to go
+        alpha:
+        beta:
+        player: which player is playing, swaps between 1 and 2 for each recusion step
+    Returns:
+    
+    """
     
     win = check_win(board)
     if win:
@@ -212,7 +221,7 @@ def minimax(board:list[int], depth:int, alpha:float, beta:float, maximising_ai:b
             continue
 
         visited_states.add(hashed_child)
-        value = -minimax(child, depth - 1, -beta, -alpha, not maximising_ai)
+        value = -minimax(child, depth - 1, -beta, -alpha, (player % 2) + 1)
 
         if value >= beta: return value
         max_value = max(max_value, value)
@@ -222,16 +231,17 @@ def minimax(board:list[int], depth:int, alpha:float, beta:float, maximising_ai:b
 
 
 def ai_play(board:list[int]) -> list[int]:
-    # get all the options
-    top_row = board[:7]
-    #options = [1 if val == 0 else 0 for val in top_row]
-    options = [i for i in SEARCH_ORDER if top_row[i] == 0]
+    """
+    Find the best move for the ai, return the board with the given move
+
+    Args:
+        board: The game board
+    Returns:
+        The updated board
+    """
 
     visited_states.clear()
-
-    # board full, draw
-    if len(options) == 0:
-        return board
+    options = possible_moves(board)
 
     best_value = -np.inf
     best_move = 0
@@ -239,7 +249,7 @@ def ai_play(board:list[int]) -> list[int]:
 
         child = make_move(board, option, 2)
 
-        value = -minimax(child, DEPTH, -np.inf, np.inf, False)
+        value = -minimax(child, DEPTH, -np.inf, np.inf, 1)
         print(option, value)
         if value > best_value:
             best_value = value
@@ -256,22 +266,25 @@ while True:
             sys.exit()
 
         elif event.type == pygame.MOUSEBUTTONUP:
-            if check_win(board):
-                print(check_win(board))
-                print(board)
-                continue
-
-            if len(possible_moves(board)) == 0:
-                continue
 
             mouse_x:int = pygame.mouse.get_pos()[0]
-
             cell_x:int = mouse_x // CELL_SIZE
             cell_x = max(0, cell_x)
             cell_x = min(6, cell_x)
 
+            possible_move = possible_moves(board)
+            if len(possible_move) == 0 or check_win(board) or cell_x not in possible_move:
+                continue
+
+
             board = make_move(board, cell_x, 1)
-            board = ai_play(board)
+            
+            if not check_win(board):
+                board = ai_play(board)
+
+            if check_win(board):
+                print(check_win(board))
+                print(board)
 
 
     for i, cell in enumerate(board):
